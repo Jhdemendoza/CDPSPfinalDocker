@@ -87,6 +87,16 @@ services:
             LAN3:
                 ipv4_address: 10.1.2.2
 
+    #fw:
+    #    build: ./fw/
+    #    depends_on:
+    #        - lb
+    #    ports: 
+    #        - "80:80"
+    #    networks:
+    #        LAN3:
+    #            ipv4_address: 10.1.2.1
+
 networks:
 #   LAN1:
 #       driver: bridge
@@ -114,4 +124,3 @@ networks:
                   gateway: 10.1.2.100
 
 ## Lo lógico sería poder establecer como gateway de las distintas redes los contenedores, pero no está soportado, ni por nombre de servicio ni por IP, porque las redes se generan en el host al utilizar el driver bridge, y una interfaz de red "no puede salir por ella misma". Habría que crear un driver...
-## Este problema a la hora de configurar los gateways hace que el balanceador de carga intente conectarse con el gateway de su red provocando que muchas veces haya errores en el CRM.
