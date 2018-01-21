@@ -1,0 +1,117 @@
+version: '2.0'
+services:
+    crm: 
+        build: ./crm/
+        #image: crm_master
+        #ports:
+        #    - "3000:3000"
+        environment:
+            DATABASE_URL: 'postgres://crm:xxxx@db:5432/crm'
+        depends_on: 
+            - db
+        networks:
+        #   - LAN1
+        #   - LAN2
+            LAN1:
+                ipv4_address: 10.1.4.11            
+            LAN2:
+                ipv4_address: 10.1.3.11
+        volumes:
+            - ./dataStorage:/CRM_2017/public/uploads
+    crm2:
+        build: ./crm_replica/
+        #image: crm_replica
+        #ports: 
+        #    - "3001:3000"
+        environment:
+            DATABASE_URL: 'postgres://crm:xxxx@db:5432/crm'
+        depends_on: 
+            - db
+            - crm
+        networks:
+        #   - LAN1
+        #   - LAN2
+            LAN1:
+                ipv4_address: 10.1.4.12
+            LAN2:
+                ipv4_address: 10.1.3.12
+        volumes:
+            - ./dataStorage:/CRM_2017/public/uploads
+    
+    crm3:
+        build: ./crm_replica/
+        #image: crm_replica
+        #ports: 
+        #    - "3002:3000"
+        environment:
+            DATABASE_URL: 'postgres://crm:xxxx@db:5432/crm'
+        depends_on: 
+            - db
+            - crm
+        networks:
+        #   - LAN1
+        #   - LAN2
+            LAN1:
+                ipv4_address: 10.1.4.13
+            LAN2:
+                ipv4_address: 10.1.3.13
+        volumes:
+            - ./dataStorage:/CRM_2017/public/uploads
+
+    db:
+        image: postgres
+        #ports: 
+        #    - "5432:5432"
+        environment:
+            POSTGRES_PASSWORD: 'xxxx'
+            POSTGRES_USER: 'crm'
+            POSTGRES_DB: 'crm'
+        networks:
+        #   - LAN1
+            LAN1:
+                ipv4_address: 10.1.4.31
+
+    lb:
+        build: ./lb/
+        depends_on:
+            - crm
+            - crm2
+            - crm3
+        ports:
+            - "80:80"
+        networks:
+        #   - LAN2
+        #   - LAN3
+            LAN2:
+                ipv4_address: 10.1.3.1
+            LAN3:
+                ipv4_address: 10.1.2.2
+
+networks:
+#   LAN1:
+#       driver: bridge
+#   LAN2:
+#       driver: bridge
+#   LAN3:
+#       driver: bridge
+    LAN1:
+        driver: bridge
+        ipam:
+            config:
+                - subnet: 10.1.4.0/24
+                  gateway: 10.1.4.1
+    LAN2:
+        driver: bridge
+        ipam:
+            config:
+                - subnet: 10.1.3.0/24
+                  gateway: 10.1.3.100
+    LAN3:
+        driver: bridge
+        ipam:
+            config:
+                - subnet: 10.1.2.0/24
+                  gateway: 10.1.2.100
+
+## Lo lógico sería poder establecer como gateway de las distintas redes los contenedores, pero no está soportado, ni por nombre de servicio ni por IP, porque las redes se generan en el host al utilizar el driver bridge, y una interfaz de red "no puede salir por ella misma". Habría que crear un driver...
+## Este problema a la hora de configurar los gateways hace que el balanceador de carga intente conectarse con el gateway de su red provocando que muchas veces haya errores en el CRM.
